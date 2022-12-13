@@ -1,0 +1,42 @@
+#!/bin/zsh
+
+activate() {
+    setup_prompt
+    setup_aliases
+    unset -f activate
+}
+
+setup_prompt() {
+    _OLD_PROMPT="$PROMPT"
+    PROMPT="(unicorn) $PROMPT"
+}
+
+revert_prompt() {
+    PROMPT="$_OLD_PROMPT"
+    unset _OLD_PROMPT
+}
+
+setup_aliases() {
+    alias unit_test="dart test"
+    alias coverage_test="dart run coverage:test_with_coverage"
+}
+
+revert_aliases() {
+    unalias unit_test
+    unalias coverage_test
+}
+
+deactivate() {
+    revert_prompt
+    revert_aliases
+    clean_coverage  
+    unset -f deactivate
+}
+
+clean_coverage() {
+    if [ -d coverage ]; then
+        rm -rf coverage
+    fi
+}
+
+activate
