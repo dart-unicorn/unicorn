@@ -232,3 +232,17 @@ class ServiceInstance {
   bool hasSameDescriptor(ServiceDescriptor descriptor) =>
       _hasSameDescriptor(this.descriptor, descriptor);
 }
+
+extension ServiceContainerRegisterExtensions on IServiceContainer {
+  void addTransient<TServiceType, TServiceImplementation>({
+    required ServiceFactory<TServiceType> factory,
+  }) {
+    addService(lifetime: ServiceLifetime.transient, factory: factory);
+  }
+
+  void addSingleton<TServiceType, TServiceImplementation>({
+    required ServiceFactory<TServiceType> factory,
+  }) {
+    addService(lifetime: ServiceLifetime.singleton, factory: factory);
+  }
+}
