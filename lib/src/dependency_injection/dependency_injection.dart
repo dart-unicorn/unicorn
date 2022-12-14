@@ -7,12 +7,12 @@ typedef ServiceResolver = AnyService Function(Type target);
 typedef ServiceFactory<T> = T Function(ServiceResolver resolve);
 
 abstract class IServiceContainer {
-  void addService<TServiceType, TServiceImplementation>({
+  void addService<TService, TServiceImplementation>({
     required ServiceLifetime lifetime,
-    required ServiceFactory<TServiceType> factory,
+    required ServiceFactory<TService> factory,
   });
 
-  TServiceType resolve<TServiceType>();
+  TService resolve<TService>();
 }
 
 enum ServiceLifetime {
@@ -33,12 +33,12 @@ class ServiceContainer implements IServiceContainer {
       ServiceInstanceCollection();
 
   @override
-  void addService<TServiceType, TServiceImplementation>({
+  void addService<TService, TServiceImplementation>({
     required ServiceLifetime lifetime,
-    required ServiceFactory<TServiceType> factory,
+    required ServiceFactory<TService> factory,
   }) {
     _descriptors.add(
-      serviceType: TServiceType,
+      serviceType: TService,
       serviceImplmenetationType: TServiceImplementation,
       lifetime: lifetime,
       factory: factory,
@@ -46,22 +46,22 @@ class ServiceContainer implements IServiceContainer {
   }
 
   @override
-  TServiceType resolve<TServiceType>() {
+  TService resolve<TService>() {
     var servicesInRequestScope = ServiceInstanceCollection();
 
     return _resolveInternal(
-      TServiceType,
+      TService,
       _servicesInSingletonScope,
       servicesInRequestScope,
-    ) as TServiceType;
+    ) as TService;
   }
 
   dynamic _resolveInternal(
-    Type type,
+    Type serviceType,
     ServiceInstanceCollection servicesInSingletonScope,
     ServiceInstanceCollection servicesInRequestScope,
   ) {
-    var descriptor = _requireServiceDescriptorByIdentifier(type);
+    var descriptor = _requireServiceDescriptorByIdentifier(serviceType);
 
     if (descriptor.isInSingletonScope()) {
       var service = servicesInSingletonScope.getByDescriptor(descriptor);
@@ -234,14 +234,14 @@ class ServiceInstance {
 }
 
 extension ServiceContainerRegisterExtensions on IServiceContainer {
-  void addTransient<TServiceType, TServiceImplementation>({
-    required ServiceFactory<TServiceType> factory,
+  void addTransient<TService, TServiceImplementation>({
+    required ServiceFactory<TService> factory,
   }) {
     addService(lifetime: ServiceLifetime.transient, factory: factory);
   }
 
-  void addSingleton<TServiceType, TServiceImplementation>({
-    required ServiceFactory<TServiceType> factory,
+  void addSingleton<TService, TServiceImplementation>({
+    required ServiceFactory<TService> factory,
   }) {
     addService(lifetime: ServiceLifetime.singleton, factory: factory);
   }
