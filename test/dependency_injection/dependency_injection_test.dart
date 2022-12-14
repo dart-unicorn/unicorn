@@ -45,7 +45,7 @@ void main() {
     var container = ServiceContainer();
     addDependencies(container);
 
-    var bookStore = container.resolve<BookStore>();
+    var bookStore = container.getService<BookStore>();
 
     expect(bookStore, isA<BookStore>());
   });
@@ -64,7 +64,7 @@ void main() {
     );
 
     expect(
-      () => container.resolve<BookStore>(),
+      () => container.getService<BookStore>(),
       throwsA(isA<ServiceNotFoundError>()),
     );
   });
@@ -73,8 +73,8 @@ void main() {
     var container = ServiceContainer();
     addDependencies(container);
 
-    var firstResolved = container.resolve<BookStore>();
-    var secondResolved = container.resolve<BookStore>();
+    var firstResolved = container.getService<BookStore>();
+    var secondResolved = container.getService<BookStore>();
 
     expect(
       firstResolved,
@@ -86,8 +86,8 @@ void main() {
     var container = ServiceContainer();
     addDependencies(container, lifetime: ServiceLifetime.singleton);
 
-    var firstResolved = container.resolve<BookStore>();
-    var secondResolved = container.resolve<BookStore>();
+    var firstResolved = container.getService<BookStore>();
+    var secondResolved = container.getService<BookStore>();
 
     expect(
       firstResolved,
@@ -99,8 +99,8 @@ void main() {
     var container = ServiceContainer();
     addDependencies(container, lifetime: ServiceLifetime.request);
 
-    var firstResolved = container.resolve<BookStore>();
-    var secondResolved = container.resolve<BookStore>();
+    var firstResolved = container.getService<BookStore>();
+    var secondResolved = container.getService<BookStore>();
 
     expect(
       firstResolved,

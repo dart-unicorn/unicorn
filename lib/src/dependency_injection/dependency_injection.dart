@@ -6,14 +6,19 @@ typedef ServiceResolver = AnyService Function(Type target);
 
 typedef ServiceFactory<T> = T Function(ServiceResolver resolve);
 
-abstract class IServiceContainer {
+abstract class IServiceCollection {
   void addService<TService, TServiceImplementation>({
     required ServiceLifetime lifetime,
     required ServiceFactory<TService> factory,
   });
-
-  TService resolve<TService>();
 }
+
+abstract class IServiceProvider {
+  TService getService<TService>();
+}
+
+abstract class IServiceContainer
+    implements IServiceCollection, IServiceProvider {}
 
 enum ServiceLifetime {
   singleton,
@@ -37,7 +42,7 @@ class ServiceContainer implements IServiceContainer {
     required ServiceLifetime lifetime,
     required ServiceFactory<TService> factory,
   }) {
-    _descriptors.add(
+    _descriptors.addDescriptor(
       serviceType: TService,
       serviceImplmenetationType: TServiceImplementation,
       lifetime: lifetime,
@@ -46,7 +51,7 @@ class ServiceContainer implements IServiceContainer {
   }
 
   @override
-  TService resolve<TService>() {
+  TService getService<TService>() {
     var servicesInRequestScope = ServiceInstanceCollection();
 
     return _resolveInternal(
@@ -126,7 +131,7 @@ class ServiceDescriptorCollection extends IterableBase<ServiceDescriptor> {
   @override
   Iterator<ServiceDescriptor> get iterator => _descriptors.iterator;
 
-  void add({
+  void addDescriptor({
     required Type serviceType,
     required Type serviceImplmenetationType,
     required ServiceLifetime lifetime,
@@ -233,7 +238,7 @@ class ServiceInstance {
       _hasSameDescriptor(this.descriptor, descriptor);
 }
 
-extension ServiceContainerRegisterExtensions on IServiceContainer {
+extension ServiceRegistrarExtensions on IServiceCollection {
   void addTransient<TService, TServiceImplementation>({
     required ServiceFactory<TService> factory,
   }) {

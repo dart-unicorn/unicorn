@@ -37,7 +37,7 @@ class ResolveOneHasNoDependencies extends BenchmarkBase {
   @override
   void run() {
     for (var i = 0; i < N; i++) {
-      container.resolve<Foo>();
+      container.getService<Foo>();
     }
   }
 }
@@ -66,7 +66,7 @@ class ResolveOneHasOneDependencies extends BenchmarkBase {
   @override
   void run() {
     for (var i = 0; i < N; i++) {
-      container.resolve<Bar>();
+      container.getService<Bar>();
     }
   }
 }
@@ -104,7 +104,7 @@ class ResolveOneHasThreeDependencies extends BenchmarkBase {
   @override
   void run() {
     for (var i = 0; i < N; i++) {
-      container.resolve<Qux>();
+      container.getService<Qux>();
     }
   }
 }
