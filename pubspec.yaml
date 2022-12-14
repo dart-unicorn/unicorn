@@ -12,3 +12,4 @@ dev_dependencies:
   lints: ^2.0.0
   test: ^1.16.0
   coverage: ^1.6.1
+  benchmark_harness: ^2.2.0
