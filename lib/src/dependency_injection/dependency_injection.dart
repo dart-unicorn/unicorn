@@ -26,7 +26,8 @@ enum Scope {
 class ServiceContainer implements IServiceContainer {
   ServiceContainer();
 
-  final ServiceBindingCollection _serviceBindings = ServiceBindingCollection();
+  final ServiceDescriptorCollection _serviceDescriptors =
+      ServiceDescriptorCollection();
 
   final ServiceInstanceCollection _servicesInSingletonScope =
       ServiceInstanceCollection();
@@ -36,7 +37,7 @@ class ServiceContainer implements IServiceContainer {
     required Scope scope,
     required ServiceFactory<TServiceIdentifier> factory,
   }) {
-    _serviceBindings.add(
+    _serviceDescriptors.add(
       identifier: TServiceIdentifier,
       target: TServiceTarget,
       scope: scope,
@@ -60,16 +61,16 @@ class ServiceContainer implements IServiceContainer {
     ServiceInstanceCollection servicesInSingletonScope,
     ServiceInstanceCollection servicesInRequestScope,
   ) {
-    var binding = _requireServiceBindingByIdentifier(type);
+    var descriptor = _requireServiceDescriptorByIdentifier(type);
 
-    if (binding.isInSingletonScope()) {
-      var service = servicesInSingletonScope.getByBinding(binding);
+    if (descriptor.isInSingletonScope()) {
+      var service = servicesInSingletonScope.getByDescriptor(descriptor);
       if (service != null) {
         return service.dartObject;
       }
     }
-    if (binding.isInRequestScope()) {
-      var service = servicesInRequestScope.getByBinding(binding);
+    if (descriptor.isInRequestScope()) {
+      var service = servicesInRequestScope.getByDescriptor(descriptor);
       if (service != null) {
         return service.dartObject;
       }
@@ -83,23 +84,23 @@ class ServiceContainer implements IServiceContainer {
       );
     }
 
-    var service = binding.createServiceInstance(resolveSubRequest);
+    var service = descriptor.createServiceInstance(resolveSubRequest);
 
-    if (binding.isInSingletonScope()) {
+    if (descriptor.isInSingletonScope()) {
       servicesInSingletonScope.add(service);
-    } else if (binding.isInRequestScope()) {
+    } else if (descriptor.isInRequestScope()) {
       servicesInRequestScope.add(service);
     }
 
     return service.dartObject;
   }
 
-  ServiceBinding _requireServiceBindingByIdentifier(Type identifier) {
-    var binding = _serviceBindings.getByIdentifier(identifier);
-    if (binding == null) {
+  ServiceDescriptor _requireServiceDescriptorByIdentifier(Type identifier) {
+    var descriptor = _serviceDescriptors.getByIdentifier(identifier);
+    if (descriptor == null) {
       throw ServiceNotFoundError.fromServiceIdentifier(identifier);
     }
-    return binding;
+    return descriptor;
   }
 }
 
@@ -117,13 +118,13 @@ class ServiceNotFoundError extends Error {
   }
 }
 
-class ServiceBindingCollection extends IterableBase<ServiceBinding> {
-  ServiceBindingCollection();
+class ServiceDescriptorCollection extends IterableBase<ServiceDescriptor> {
+  ServiceDescriptorCollection();
 
-  final List<ServiceBinding> _bindings = <ServiceBinding>[];
+  final List<ServiceDescriptor> _descriptors = <ServiceDescriptor>[];
 
   @override
-  Iterator<ServiceBinding> get iterator => _bindings.iterator;
+  Iterator<ServiceDescriptor> get iterator => _descriptors.iterator;
 
   void add({
     required Type identifier,
@@ -131,25 +132,25 @@ class ServiceBindingCollection extends IterableBase<ServiceBinding> {
     required Scope scope,
     required ServiceFactory<dynamic> factory,
   }) {
-    _bindings.add(ServiceBinding(identifier, target, scope, factory));
+    _descriptors.add(ServiceDescriptor(identifier, target, scope, factory));
   }
 
-  void remove(ServiceBinding binding) {
-    _bindings.remove(binding);
+  void remove(ServiceDescriptor descriptor) {
+    _descriptors.remove(descriptor);
   }
 
-  ServiceBinding? getByIdentifier(Type identifier) {
+  ServiceDescriptor? getByIdentifier(Type identifier) {
     try {
-      return _bindings
-          .firstWhere((binding) => binding.identifier == identifier);
+      return _descriptors
+          .firstWhere((descriptor) => descriptor.identifier == identifier);
     } on StateError {
       return null;
     }
   }
 }
 
-class ServiceBinding {
-  const ServiceBinding(
+class ServiceDescriptor {
+  const ServiceDescriptor(
     this.identifier,
     this.target,
     this.scope,
@@ -195,29 +196,34 @@ class ServiceInstanceCollection extends IterableBase<dynamic> {
     _services.remove(service);
   }
 
-  ServiceInstance? getByBinding(ServiceBinding binding) {
+  ServiceInstance? getByDescriptor(ServiceDescriptor descriptor) {
     try {
-      return _services.firstWhere((service) => service.hasSameBinding(binding));
+      return _services
+          .firstWhere((service) => service.hasSameDescriptor(descriptor));
     } on StateError {
       return null;
     }
   }
 
-  void removeByBinding(ServiceBinding binding) {
-    _services.removeWhere((service) => service.hasSameBinding(binding));
+  void removeByDescriptor(ServiceDescriptor descriptor) {
+    _services.removeWhere((service) => service.hasSameDescriptor(descriptor));
   }
 }
 
 class ServiceInstance {
-  const ServiceInstance(this.binding, this.dartObject);
+  const ServiceInstance(this.descriptor, this.dartObject);
 
-  final ServiceBinding binding;
+  final ServiceDescriptor descriptor;
 
   final dynamic dartObject;
 
-  static bool _hasSameBinding(ServiceBinding binding, ServiceBinding other) =>
-      binding.identifier == other.identifier && binding.scope == binding.scope;
+  static bool _hasSameDescriptor(
+    ServiceDescriptor descriptor,
+    ServiceDescriptor other,
+  ) =>
+      (descriptor.identifier == other.identifier &&
+          descriptor.scope == descriptor.scope);
 
-  bool hasSameBinding(ServiceBinding binding) =>
-      _hasSameBinding(this.binding, binding);
+  bool hasSameDescriptor(ServiceDescriptor descriptor) =>
+      _hasSameDescriptor(this.descriptor, descriptor);
 }
