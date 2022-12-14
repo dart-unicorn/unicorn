@@ -86,7 +86,7 @@ class ServiceNotFoundError extends Error {
   ServiceNotFoundError(this.message);
 
   ServiceNotFoundError.fromServiceIdentifier(Type type)
-      : this("service $type not found");
+      : this("Service $type not found in DI container");
 
   final String message;
 
