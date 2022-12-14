@@ -24,19 +24,19 @@ class ServiceDescriptor {
 
   bool isInRequestScope() => isInScope(ServiceLifetime.request);
 
-  ServiceInstance createService(ISubRequestContext resolver) {
+  ServiceObject createService(ISubRequestContext resolver) {
     var object = factory(resolver);
 
-    return ServiceInstance(this, object);
+    return ServiceObject(this, object);
   }
 }
 
-class ServiceInstance {
-  const ServiceInstance(this.descriptor, this.dartObject);
+class ServiceObject {
+  const ServiceObject(this.descriptor, this.runtimeObject);
 
   final ServiceDescriptor descriptor;
 
-  final dynamic dartObject;
+  final dynamic runtimeObject;
 
   static bool _hasSameDescriptor(
     ServiceDescriptor descriptor,
@@ -75,7 +75,7 @@ class ServiceDescriptorCollection extends IterableBase<ServiceDescriptor> {
     _descriptors.remove(descriptor);
   }
 
-  bool anyHasServiceType(Type serviceType) {
+  bool containsByServiceType(Type serviceType) {
     return _descriptors
         .any((descriptor) => descriptor.serviceType == serviceType);
   }
@@ -90,23 +90,23 @@ class ServiceDescriptorCollection extends IterableBase<ServiceDescriptor> {
   }
 }
 
-class ServiceInstanceCollection extends IterableBase<dynamic> {
-  ServiceInstanceCollection();
+class ServiceScope extends IterableBase<ServiceObject> {
+  ServiceScope();
 
-  final List<ServiceInstance> _services = <ServiceInstance>[];
+  final List<ServiceObject> _services = <ServiceObject>[];
 
   @override
-  Iterator get iterator => _services.iterator;
+  Iterator<ServiceObject> get iterator => _services.iterator;
 
-  void add(ServiceInstance instance) {
-    _services.add(instance);
+  void add(ServiceObject serviceObject) {
+    _services.add(serviceObject);
   }
 
-  void remove(ServiceInstance service) {
-    _services.remove(service);
+  void remove(ServiceObject serviceObject) {
+    _services.remove(serviceObject);
   }
 
-  ServiceInstance? getByDescriptor(ServiceDescriptor descriptor) {
+  ServiceObject? getByDescriptor(ServiceDescriptor descriptor) {
     try {
       return _services
           .firstWhere((service) => service.hasSameDescriptor(descriptor));

@@ -6,15 +6,14 @@ class ServiceContainer implements IServiceContainer {
   final ServiceDescriptorCollection _descriptors =
       ServiceDescriptorCollection();
 
-  final ServiceInstanceCollection _servicesInSingletonScope =
-      ServiceInstanceCollection();
+  final ServiceScope _singletonScope = ServiceScope();
 
   @override
   void addService<TService, TServiceImplementation>({
     required ServiceLifetime lifetime,
     required ServiceFactoryFunc<TService> factory,
   }) {
-    if (_descriptors.anyHasServiceType(TService)) {
+    if (_descriptors.containsByServiceType(TService)) {
       throw ServiceAlreadyAddedError.withServiceType(TService);
     }
     _descriptors.addDescriptor(
@@ -27,53 +26,53 @@ class ServiceContainer implements IServiceContainer {
 
   @override
   TService getService<TService>() {
-    var servicesInRequestScope = ServiceInstanceCollection();
+    var requestScope = ServiceScope();
 
     return _resolveInternal(
       TService,
-      _servicesInSingletonScope,
-      servicesInRequestScope,
+      _singletonScope,
+      requestScope,
     ) as TService;
   }
 
   dynamic _resolveInternal(
     Type serviceType,
-    ServiceInstanceCollection servicesInSingletonScope,
-    ServiceInstanceCollection servicesInRequestScope,
+    ServiceScope singletonScope,
+    ServiceScope requestScope,
   ) {
-    var descriptor = _requireServiceDescriptorByIdentifier(serviceType);
+    var serviceDescriptor = _requireServiceDescriptorByIdentifier(serviceType);
 
-    if (descriptor.isInSingletonScope()) {
-      var service = servicesInSingletonScope.getByDescriptor(descriptor);
+    if (serviceDescriptor.isInSingletonScope()) {
+      var service = singletonScope.getByDescriptor(serviceDescriptor);
       if (service != null) {
-        return service.dartObject;
+        return service.runtimeObject;
       }
     }
-    if (descriptor.isInRequestScope()) {
-      var service = servicesInRequestScope.getByDescriptor(descriptor);
-      if (service != null) {
-        return service.dartObject;
+    if (serviceDescriptor.isInRequestScope()) {
+      var serviceObject = requestScope.getByDescriptor(serviceDescriptor);
+      if (serviceObject != null) {
+        return serviceObject.runtimeObject;
       }
     }
 
     dynamic resolveSubRequest(Type type) {
       return _resolveInternal(
         type,
-        servicesInSingletonScope,
-        servicesInRequestScope,
+        singletonScope,
+        requestScope,
       );
     }
 
-    var service =
-        descriptor.createService(resolveSubRequest.toSubRequestContext());
+    var serviceObject = serviceDescriptor
+        .createService(resolveSubRequest.toSubRequestContext());
 
-    if (descriptor.isInSingletonScope()) {
-      servicesInSingletonScope.add(service);
-    } else if (descriptor.isInRequestScope()) {
-      servicesInRequestScope.add(service);
+    if (serviceDescriptor.isInSingletonScope()) {
+      singletonScope.add(serviceObject);
+    } else if (serviceDescriptor.isInRequestScope()) {
+      requestScope.add(serviceObject);
     }
 
-    return service.dartObject;
+    return serviceObject.runtimeObject;
   }
 
   ServiceDescriptor _requireServiceDescriptorByIdentifier(Type identifier) {
