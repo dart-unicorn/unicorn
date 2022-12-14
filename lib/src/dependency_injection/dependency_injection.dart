@@ -1,8 +1,10 @@
 import 'dart:collection';
 
-typedef ServiceResolver<T> = T Function(Type target);
+typedef AnyService = dynamic;
 
-typedef ServiceFactory<T> = T Function(ServiceResolver<dynamic> resolve);
+typedef ServiceResolver = AnyService Function(Type target);
+
+typedef ServiceFactory<T> = T Function(ServiceResolver resolve);
 
 abstract class IServiceContainer {
   void registerService<TServiceIdentifier, TServiceTarget>({
@@ -170,9 +172,7 @@ class ServiceBinding {
 
   bool isInRequestScope() => isInScope(Scope.request);
 
-  ServiceInstance createServiceInstance(
-    ServiceResolver<dynamic> resolver,
-  ) {
+  ServiceInstance createServiceInstance(ServiceResolver resolver) {
     var object = factory(resolver);
 
     return ServiceInstance(this, object);
