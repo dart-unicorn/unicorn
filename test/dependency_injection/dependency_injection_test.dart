@@ -43,76 +43,120 @@ void addDependencies(
 }
 
 void main() {
-  test("should resolve", () {
-    var container = ServiceContainer();
-    addDependencies(container);
+  group("dependency injection", () {
+    test("should resolve a service without dependencies", () {
+      var container = ServiceContainer();
+      addDependencies(container);
 
-    var bookStore = container.getService<BookStore>();
+      var bookStore = container.getService<BookRepository>();
 
-    expect(bookStore, isA<BookStore>());
-  });
+      expect(bookStore, isA<BookRepository>());
+    });
 
-  test("should throw ServiceNotFoundError", () {
-    var container = ServiceContainer();
+    test("should resolve a service with its dependencies", () {
+      var container = ServiceContainer();
+      addDependencies(container);
 
-    container.addService<BookRepository, BookRepository>(
-      lifetime: ServiceLifetime.transient,
-      factory: (request) => BookRepository(),
+      var bookStore = container.getService<BookStore>();
+
+      expect(bookStore, isA<BookStore>());
+    });
+
+    test(
+      "should throw ServiceAlreadyAddedError if a service was already added",
+      () {
+        var container = ServiceContainer();
+        container.addService<BookRepository, BookRepository>(
+          lifetime: ServiceLifetime.transient,
+          factory: (_) => BookRepository(),
+        );
+
+        expect(
+          () {
+            container.addService<BookRepository, BookRepository>(
+              lifetime: ServiceLifetime.transient,
+              factory: (_) => BookRepository(),
+            );
+          },
+          throwsA(isA<ServiceAlreadyAddedError>()),
+        );
+      },
     );
-    container.addService<BookStore, BookStore>(
-      lifetime: ServiceLifetime.transient,
-      factory: (r) => BookStore(
-        r.require<BookRepository>(),
-        r.require<StockService>(),
-      ),
+
+    test(
+      "should throw ServiceNotFoundError if the service is not added",
+      () {
+        var container = ServiceContainer();
+
+        container.addService<BookRepository, BookRepository>(
+          lifetime: ServiceLifetime.transient,
+          factory: (request) => BookRepository(),
+        );
+        container.addService<BookStore, BookStore>(
+          lifetime: ServiceLifetime.transient,
+          factory: (r) => BookStore(
+            r.require<BookRepository>(),
+            r.require<StockService>(),
+          ),
+        );
+
+        expect(
+          () => container.getService<BookStore>(),
+          throwsA(isA<ServiceNotFoundError>()),
+        );
+      },
     );
 
-    expect(
-      () => container.getService<BookStore>(),
-      throwsA(isA<ServiceNotFoundError>()),
+    test(
+      "should resolve a service with transient lifetime",
+      () {
+        var container = ServiceContainer();
+        addDependencies(container);
+
+        var firstResolved = container.getService<BookStore>();
+        var secondResolved = container.getService<BookStore>();
+
+        expect(
+          firstResolved,
+          isNot(equals(secondResolved)),
+        );
+      },
     );
-  });
 
-  test("should resolve in transient lifetime", () {
-    var container = ServiceContainer();
-    addDependencies(container);
+    test(
+      "should resolve a service with singleton lifetime",
+      () {
+        var container = ServiceContainer();
+        addDependencies(container, lifetime: ServiceLifetime.singleton);
 
-    var firstResolved = container.getService<BookStore>();
-    var secondResolved = container.getService<BookStore>();
+        var firstResolved = container.getService<BookStore>();
+        var secondResolved = container.getService<BookStore>();
 
-    expect(
-      firstResolved,
-      isNot(equals(secondResolved)),
+        expect(
+          firstResolved,
+          equals(secondResolved),
+        );
+      },
     );
-  });
 
-  test("should resolve in singleton lifetime", () {
-    var container = ServiceContainer();
-    addDependencies(container, lifetime: ServiceLifetime.singleton);
+    test(
+      "should resolve a service with request lifetime",
+      () {
+        var container = ServiceContainer();
+        addDependencies(container, lifetime: ServiceLifetime.request);
 
-    var firstResolved = container.getService<BookStore>();
-    var secondResolved = container.getService<BookStore>();
+        var firstResolved = container.getService<BookStore>();
+        var secondResolved = container.getService<BookStore>();
 
-    expect(
-      firstResolved,
-      equals(secondResolved),
-    );
-  });
-
-  test("should resolve in request lifetime", () {
-    var container = ServiceContainer();
-    addDependencies(container, lifetime: ServiceLifetime.request);
-
-    var firstResolved = container.getService<BookStore>();
-    var secondResolved = container.getService<BookStore>();
-
-    expect(
-      firstResolved,
-      isNot(equals(secondResolved)),
-    );
-    expect(
-      firstResolved.bookRepository,
-      equals(firstResolved.stockService.bookRepository),
+        expect(
+          firstResolved,
+          isNot(equals(secondResolved)),
+        );
+        expect(
+          firstResolved.bookRepository,
+          equals(firstResolved.stockService.bookRepository),
+        );
+      },
     );
   });
 }

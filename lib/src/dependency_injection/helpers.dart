@@ -75,6 +75,11 @@ class ServiceDescriptorCollection extends IterableBase<ServiceDescriptor> {
     _descriptors.remove(descriptor);
   }
 
+  bool anyHasServiceType(Type serviceType) {
+    return _descriptors
+        .any((descriptor) => descriptor.serviceType == serviceType);
+  }
+
   ServiceDescriptor? getByIdentifier(Type identifier) {
     try {
       return _descriptors

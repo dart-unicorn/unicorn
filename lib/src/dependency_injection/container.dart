@@ -14,6 +14,9 @@ class ServiceContainer implements IServiceContainer {
     required ServiceLifetime lifetime,
     required ServiceFactoryFunc<TService> factory,
   }) {
+    if (_descriptors.anyHasServiceType(TService)) {
+      throw ServiceAlreadyAddedError.withServiceType(TService);
+    }
     _descriptors.addDescriptor(
       serviceType: TService,
       serviceImplmenetationType: TServiceImplementation,
@@ -76,17 +79,14 @@ class ServiceContainer implements IServiceContainer {
   ServiceDescriptor _requireServiceDescriptorByIdentifier(Type identifier) {
     var descriptor = _descriptors.getByIdentifier(identifier);
     if (descriptor == null) {
-      throw ServiceNotFoundError.fromServiceIdentifier(identifier);
+      throw ServiceNotFoundError.withServiceType(identifier);
     }
     return descriptor;
   }
 }
 
-class ServiceNotFoundError extends Error {
-  ServiceNotFoundError(this.message);
-
-  ServiceNotFoundError.fromServiceIdentifier(Type type)
-      : this("Service $type not found in DI container");
+class DependencyInjectionError extends Error {
+  DependencyInjectionError(this.message);
 
   final String message;
 
@@ -94,4 +94,19 @@ class ServiceNotFoundError extends Error {
   String toString() {
     return message;
   }
+}
+
+class ServiceNotFoundError extends DependencyInjectionError {
+  ServiceNotFoundError(String message) : super(message);
+
+  factory ServiceNotFoundError.withServiceType(Type serviceType) =>
+      ServiceNotFoundError("Service $serviceType not found in DI container");
+}
+
+class ServiceAlreadyAddedError extends DependencyInjectionError {
+  ServiceAlreadyAddedError(String message) : super(message);
+
+  factory ServiceAlreadyAddedError.withServiceType(Type type) =>
+      ServiceAlreadyAddedError(
+          "Service $type was already added into DI container");
 }
