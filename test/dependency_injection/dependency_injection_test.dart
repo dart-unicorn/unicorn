@@ -27,16 +27,18 @@ void addDependencies(
 }) {
   container.addService<BookRepository, BookRepository>(
     lifetime: lifetime,
-    factory: (request) => BookRepository(),
+    factory: (_) => BookRepository(),
   );
   container.addService<StockService, StockService>(
     lifetime: lifetime,
-    factory: (request) => StockService(request(BookRepository)),
+    factory: (r) => StockService(r.require<BookRepository>()),
   );
   container.addService<BookStore, BookStore>(
     lifetime: lifetime,
-    factory: (request) =>
-        BookStore(request(BookRepository), request(StockService)),
+    factory: (r) => BookStore(
+      r.require<BookRepository>(),
+      r.require<StockService>(),
+    ),
   );
 }
 
@@ -59,8 +61,10 @@ void main() {
     );
     container.addService<BookStore, BookStore>(
       lifetime: ServiceLifetime.transient,
-      factory: (request) =>
-          BookStore(request(BookRepository), request(StockService)),
+      factory: (r) => BookStore(
+        r.require<BookRepository>(),
+        r.require<StockService>(),
+      ),
     );
 
     expect(
