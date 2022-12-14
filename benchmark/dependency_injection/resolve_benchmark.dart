@@ -17,6 +17,42 @@ class Qux {
   Qux(Foo foo, Bar bar, Baz baz);
 }
 
+ServiceContainer createServiceContainerWithDependencies() {
+  final builder = ServiceContainerBuilder();
+  builder.configureServices((services) {
+    services.addService((service) {
+      service
+        ..bind<Foo>()
+        ..implementation<Foo>()
+        ..inTransientScope()
+        ..useFactory((_) => Foo());
+    });
+    services.addService((service) {
+      service
+        ..bind<Bar>()
+        ..implementation<Bar>()
+        ..inTransientScope()
+        ..useFactory((c) => Bar(c.require<Foo>()));
+    });
+    services.addService((service) {
+      service
+        ..bind<Baz>()
+        ..implementation<Baz>()
+        ..inTransientScope()
+        ..useFactory((_) => Baz());
+    });
+    services.addService((service) {
+      service
+        ..bind<Qux>()
+        ..implementation<Qux>()
+        ..inTransientScope()
+        ..useFactory(
+            (c) => Qux(c.require<Foo>(), c.require<Bar>(), c.require<Baz>()));
+    });
+  });
+  return builder.build();
+}
+
 class ResolveOneHasNoDependencies extends BenchmarkBase {
   ResolveOneHasNoDependencies() : super("ResolveOneHasNoDependencies x100k");
 
@@ -26,12 +62,7 @@ class ResolveOneHasNoDependencies extends BenchmarkBase {
 
   @override
   void setup() {
-    container = ServiceContainer();
-
-    container.addService<Foo, Foo>(
-      lifetime: ServiceLifetime.transient,
-      factory: (_) => Foo(),
-    );
+    container = createServiceContainerWithDependencies();
   }
 
   @override
@@ -51,16 +82,7 @@ class ResolveOneHasOneDependencies extends BenchmarkBase {
 
   @override
   void setup() {
-    container = ServiceContainer();
-
-    container.addService<Foo, Foo>(
-      lifetime: ServiceLifetime.transient,
-      factory: (_) => Foo(),
-    );
-    container.addService<Bar, Bar>(
-      lifetime: ServiceLifetime.transient,
-      factory: (c) => Bar(c.require<Foo>()),
-    );
+    container = createServiceContainerWithDependencies();
   }
 
   @override
@@ -81,24 +103,7 @@ class ResolveOneHasThreeDependencies extends BenchmarkBase {
 
   @override
   void setup() {
-    container = ServiceContainer();
-
-    container.addService<Foo, Foo>(
-      lifetime: ServiceLifetime.transient,
-      factory: (_) => Foo(),
-    );
-    container.addService<Bar, Bar>(
-      lifetime: ServiceLifetime.transient,
-      factory: (c) => Bar(c.require<Foo>()),
-    );
-    container.addService<Baz, Baz>(
-      lifetime: ServiceLifetime.transient,
-      factory: (_) => Baz(),
-    );
-    container.addService<Qux, Qux>(
-      lifetime: ServiceLifetime.transient,
-      factory: (c) => Qux(c.require<Foo>(), c.require<Bar>(), c.require<Baz>()),
-    );
+    container = createServiceContainerWithDependencies();
   }
 
   @override

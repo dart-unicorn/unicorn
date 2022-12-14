@@ -1,28 +1,30 @@
 part of 'dependency_injection.dart';
 
+typedef ServiceFactoryFunc<T> = T Function(ISubRequestContext context);
+
 class ServiceDescriptor {
-  const ServiceDescriptor(
-    this.serviceType,
-    this.serviceImplementationType,
-    this.lifetime,
-    this.factory,
-  );
+  const ServiceDescriptor({
+    required this.serviceType,
+    required this.serviceImplementation,
+    required this.lifetime,
+    required this.factory,
+  });
 
   final Type serviceType;
 
-  final Type serviceImplementationType;
+  final Type serviceImplementation;
 
   final ServiceLifetime lifetime;
 
   final ServiceFactoryFunc<dynamic> factory;
 
-  bool isInScope(ServiceLifetime lifetime) => this.lifetime == lifetime;
+  bool shouldAddServiceIntoSingletonScope() =>
+      lifetime == ServiceLifetime.singleton;
 
-  bool isInSingletonScope() => isInScope(ServiceLifetime.singleton);
+  bool shouldAddIntoTransientScope() => lifetime == ServiceLifetime.transient;
 
-  bool isInTransientScope() => isInScope(ServiceLifetime.transient);
-
-  bool isInRequestScope() => isInScope(ServiceLifetime.request);
+  bool shouldAddServiceIntoRequestScope() =>
+      lifetime == ServiceLifetime.request;
 
   ServiceObject createService(ISubRequestContext resolver) {
     var object = factory(resolver);
@@ -30,6 +32,71 @@ class ServiceDescriptor {
     return ServiceObject(this, object);
   }
 }
+
+class ServiceDescriptorBuilder {
+  late Type _serviceType;
+
+  late Type? _serviceImplementation;
+
+  late ServiceLifetime _lifetime;
+
+  late ServiceFactoryFunc _factory;
+
+  void bind<TService>() {
+    _serviceType = TService;
+  }
+
+  void bindWithType(Type serviceType) {
+    _serviceType = serviceType;
+  }
+
+  void implementation<TServiceImplementation>() {
+    _serviceImplementation = TServiceImplementation;
+  }
+
+  void implementationWithType(Type serviceImplementation) {
+    _serviceImplementation = serviceImplementation;
+  }
+
+  void inScope(ServiceLifetime lifetime) {
+    _lifetime = lifetime;
+  }
+
+  void inTransientScope() {
+    _lifetime = ServiceLifetime.transient;
+  }
+
+  void inSingletonScope() {
+    _lifetime = ServiceLifetime.singleton;
+  }
+
+  void inRequestScope() {
+    _lifetime = ServiceLifetime.request;
+  }
+
+  void useFactory<TService>(ServiceFactoryFunc<TService> factory) {
+    _factory = factory;
+  }
+
+  ServiceDescriptor build() {
+    _checkForBuild();
+
+    return ServiceDescriptor(
+      serviceType: _serviceType,
+      serviceImplementation: _serviceImplementation ?? _serviceType,
+      lifetime: _lifetime,
+      factory: _factory,
+    );
+  }
+
+  void _checkForBuild() {
+    // Use `late` keyword to prevent misconfigure.
+  }
+}
+
+typedef ServiceDescriptorBuildAction = void Function(
+  ServiceDescriptorBuilder service,
+);
 
 class ServiceObject {
   const ServiceObject(this.descriptor, this.runtimeObject);
@@ -49,44 +116,18 @@ class ServiceObject {
       _hasSameDescriptor(this.descriptor, descriptor);
 }
 
-class ServiceDescriptorCollection extends IterableBase<ServiceDescriptor> {
-  ServiceDescriptorCollection();
+class ServiceCollection extends IterableBase<ServiceDescriptor>
+    implements IServiceCollection {
+  ServiceCollection();
 
   final List<ServiceDescriptor> _descriptors = <ServiceDescriptor>[];
 
   @override
   Iterator<ServiceDescriptor> get iterator => _descriptors.iterator;
 
-  void addDescriptor({
-    required Type serviceType,
-    required Type serviceImplmenetationType,
-    required ServiceLifetime lifetime,
-    required ServiceFactoryFunc<dynamic> factory,
-  }) {
-    _descriptors.add(ServiceDescriptor(
-      serviceType,
-      serviceImplmenetationType,
-      lifetime,
-      factory,
-    ));
-  }
-
-  void remove(ServiceDescriptor descriptor) {
-    _descriptors.remove(descriptor);
-  }
-
-  bool containsByServiceType(Type serviceType) {
-    return _descriptors
-        .any((descriptor) => descriptor.serviceType == serviceType);
-  }
-
-  ServiceDescriptor? getByIdentifier(Type identifier) {
-    try {
-      return _descriptors
-          .firstWhere((descriptor) => descriptor.serviceType == identifier);
-    } on StateError {
-      return null;
-    }
+  @override
+  void add(ServiceDescriptor descriptor) {
+    _descriptors.add(descriptor);
   }
 }
 
@@ -98,15 +139,15 @@ class ServiceScope extends IterableBase<ServiceObject> {
   @override
   Iterator<ServiceObject> get iterator => _services.iterator;
 
-  void add(ServiceObject serviceObject) {
+  void addService(ServiceObject serviceObject) {
     _services.add(serviceObject);
   }
 
-  void remove(ServiceObject serviceObject) {
+  void removeService(ServiceObject serviceObject) {
     _services.remove(serviceObject);
   }
 
-  ServiceObject? getByDescriptor(ServiceDescriptor descriptor) {
+  ServiceObject? tryGetService(ServiceDescriptor descriptor) {
     try {
       return _services
           .firstWhere((service) => service.hasSameDescriptor(descriptor));
@@ -115,22 +156,58 @@ class ServiceScope extends IterableBase<ServiceObject> {
     }
   }
 
-  void removeByDescriptor(ServiceDescriptor descriptor) {
+  void removeServiceByDescriptor(ServiceDescriptor descriptor) {
     _services.removeWhere((service) => service.hasSameDescriptor(descriptor));
   }
 }
 
-extension ServiceRegistrarExtensions on IServiceCollection {
-  void addTransient<TService, TServiceImplementation>({
-    required ServiceFactoryFunc<TService> factory,
-  }) {
-    addService(lifetime: ServiceLifetime.transient, factory: factory);
+extension ServiceDescriptorBuildActionExtensions
+    on ServiceDescriptorBuildAction {
+  ServiceDescriptor buildServiceDescriptor() {
+    final builder = ServiceDescriptorBuilder();
+    this.call(builder);
+
+    return builder.build();
+  }
+}
+
+extension ServiceCollectionExtensions on IServiceCollection {
+  void addService(ServiceDescriptorBuildAction action) {
+    add(action.buildServiceDescriptor());
   }
 
-  void addSingleton<TService, TServiceImplementation>({
-    required ServiceFactoryFunc<TService> factory,
-  }) {
-    addService(lifetime: ServiceLifetime.singleton, factory: factory);
+  bool containsByServiceType(Type serviceType) {
+    return any((descriptor) => descriptor.serviceType == serviceType);
+  }
+
+  ServiceDescriptor? tryGetByServiceType(Type serviceType) {
+    try {
+      return firstWhere((descriptor) => descriptor.serviceType == serviceType);
+    } on StateError {
+      return null;
+    }
+  }
+}
+
+extension ServiceContainerBuilderExtensions on IServiceContainerBuilder {
+  void addService(ServiceDescriptorBuildAction action) {
+    configureServices((services) {
+      services.addService(action);
+    });
+  }
+
+  void addUpstream(IServiceContainerUpstream upstream) {
+    addUpstreams([upstream]);
+  }
+}
+
+extension ServiceContainerExtensions on IServiceContainer {
+  IServiceContainer withUpstream(IServiceContainerUpstream upstream) {
+    return withUpstreams([upstream]);
+  }
+
+  IServiceContainer addUpstream(IServiceContainerUpstream upstream) {
+    return addUpstreams([upstream]);
   }
 }
 
@@ -148,11 +225,4 @@ class SubRequestResolverFuncAdpater implements ISubRequestContext {
   TService require<TService>() {
     return _resolveSubRequest(TService);
   }
-}
-
-// TODO(coocoa): This is a temporary solution and unstable. Consider to be
-//  removed in the future.
-extension SubRequestResolverFuncExtensions on SubRequestResolverFunc {
-  ISubRequestContext toSubRequestContext() =>
-      SubRequestResolverFuncAdpater.fromFunc(this);
 }

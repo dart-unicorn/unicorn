@@ -21,32 +21,63 @@ class StockService {
 
 class BookRepository {}
 
-void addDependencies(
-  ServiceContainer container, {
+class Foo {}
+
+class OpaqueVisibility implements IServiceVisibilityBehavior {
+  const OpaqueVisibility();
+
+  @override
+  bool isVisibleFor(ServiceRequestContext request) {
+    return false;
+  }
+}
+
+ServiceContainer createEmptyServiceContainer() {
+  final builder = ServiceContainerBuilder();
+
+  return builder.build();
+}
+
+ServiceContainer createServiceContainerWithDependencies({
+  IServiceVisibilityBehavior visibilityBehavior = const TransparentVisibility(),
   ServiceLifetime lifetime = ServiceLifetime.transient,
 }) {
-  container.addService<BookRepository, BookRepository>(
-    lifetime: lifetime,
-    factory: (_) => BookRepository(),
-  );
-  container.addService<StockService, StockService>(
-    lifetime: lifetime,
-    factory: (r) => StockService(r.require<BookRepository>()),
-  );
-  container.addService<BookStore, BookStore>(
-    lifetime: lifetime,
-    factory: (r) => BookStore(
-      r.require<BookRepository>(),
-      r.require<StockService>(),
-    ),
-  );
+  final builder = ServiceContainerBuilder();
+
+  builder
+    ..configureServices((services) {
+      services
+        ..addService((service) {
+          service
+            ..bind<BookStore>()
+            ..implementation<BookStore>()
+            ..inScope(lifetime)
+            ..useFactory((c) => BookStore(c.require(), c.require()));
+        })
+        ..addService((service) {
+          service
+            ..bind<StockService>()
+            ..implementation<StockService>()
+            ..inScope(lifetime)
+            ..useFactory((c) => StockService(c.require()));
+        })
+        ..addService((service) {
+          service
+            ..bind<BookRepository>()
+            ..implementation<BookRepository>()
+            ..inScope(lifetime)
+            ..useFactory((c) => BookRepository());
+        });
+    })
+    ..visibilityBehavior(visibilityBehavior);
+
+  return builder.build();
 }
 
 void main() {
   group("dependency injection", () {
     test("should resolve a service without dependencies", () {
-      var container = ServiceContainer();
-      addDependencies(container);
+      var container = createServiceContainerWithDependencies();
 
       var bookStore = container.getService<BookRepository>();
 
@@ -54,8 +85,7 @@ void main() {
     });
 
     test("should resolve a service with its dependencies", () {
-      var container = ServiceContainer();
-      addDependencies(container);
+      var container = createServiceContainerWithDependencies();
 
       var bookStore = container.getService<BookStore>();
 
@@ -63,45 +93,12 @@ void main() {
     });
 
     test(
-      "should throw ServiceAlreadyAddedError if a service was already added",
-      () {
-        var container = ServiceContainer();
-        container.addService<BookRepository, BookRepository>(
-          lifetime: ServiceLifetime.transient,
-          factory: (_) => BookRepository(),
-        );
-
-        expect(
-          () {
-            container.addService<BookRepository, BookRepository>(
-              lifetime: ServiceLifetime.transient,
-              factory: (_) => BookRepository(),
-            );
-          },
-          throwsA(isA<ServiceAlreadyAddedError>()),
-        );
-      },
-    );
-
-    test(
       "should throw ServiceNotFoundError if the service is not added",
       () {
-        var container = ServiceContainer();
-
-        container.addService<BookRepository, BookRepository>(
-          lifetime: ServiceLifetime.transient,
-          factory: (request) => BookRepository(),
-        );
-        container.addService<BookStore, BookStore>(
-          lifetime: ServiceLifetime.transient,
-          factory: (r) => BookStore(
-            r.require<BookRepository>(),
-            r.require<StockService>(),
-          ),
-        );
+        var container = createServiceContainerWithDependencies();
 
         expect(
-          () => container.getService<BookStore>(),
+          () => container.getService<Foo>(),
           throwsA(isA<ServiceNotFoundError>()),
         );
       },
@@ -110,8 +107,9 @@ void main() {
     test(
       "should resolve a service with transient lifetime",
       () {
-        var container = ServiceContainer();
-        addDependencies(container);
+        var container = createServiceContainerWithDependencies(
+          lifetime: ServiceLifetime.transient,
+        );
 
         var firstResolved = container.getService<BookStore>();
         var secondResolved = container.getService<BookStore>();
@@ -126,8 +124,9 @@ void main() {
     test(
       "should resolve a service with singleton lifetime",
       () {
-        var container = ServiceContainer();
-        addDependencies(container, lifetime: ServiceLifetime.singleton);
+        var container = createServiceContainerWithDependencies(
+          lifetime: ServiceLifetime.singleton,
+        );
 
         var firstResolved = container.getService<BookStore>();
         var secondResolved = container.getService<BookStore>();
@@ -142,8 +141,9 @@ void main() {
     test(
       "should resolve a service with request lifetime",
       () {
-        var container = ServiceContainer();
-        addDependencies(container, lifetime: ServiceLifetime.request);
+        var container = createServiceContainerWithDependencies(
+          lifetime: ServiceLifetime.request,
+        );
 
         var firstResolved = container.getService<BookStore>();
         var secondResolved = container.getService<BookStore>();
@@ -156,6 +156,36 @@ void main() {
           firstResolved.bookRepository,
           equals(firstResolved.stockService.bookRepository),
         );
+      },
+    );
+
+    test(
+      "should lookup from parent container if the service not added into",
+      () {
+        var parent = createServiceContainerWithDependencies(
+          lifetime: ServiceLifetime.request,
+        );
+        var child = createEmptyServiceContainer().withUpstream(parent);
+
+        expect(child.getService<BookRepository>(), isA<BookRepository>());
+      },
+    );
+
+    test(
+      "should control under service visibility behavior",
+      () {
+        var opaque = createServiceContainerWithDependencies(
+          visibilityBehavior: OpaqueVisibility(),
+        );
+        var transparent = createServiceContainerWithDependencies(
+          visibilityBehavior: TransparentVisibility(),
+        );
+
+        expect(
+          () => opaque.getService<BookRepository>(),
+          throwsA(isA<ServiceNotFoundError>()),
+        );
+        expect(transparent.getService<BookRepository>(), isA<BookRepository>());
       },
     );
   });

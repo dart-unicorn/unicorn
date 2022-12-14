@@ -13,3 +13,6 @@ dev_dependencies:
   test: ^1.16.0
   coverage: ^1.6.1
   benchmark_harness: ^2.2.0
+  source_gen: ^1.2.6
+  build_runner: ^2.3.2
+  build: ^2.3.1
