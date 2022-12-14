@@ -25,15 +25,15 @@ void addDependencies(
   ServiceContainer container, {
   ServiceLifetime lifetime = ServiceLifetime.transient,
 }) {
-  container.registerService<BookRepository, BookRepository>(
+  container.addService<BookRepository, BookRepository>(
     lifetime: lifetime,
     factory: (request) => BookRepository(),
   );
-  container.registerService<StockService, StockService>(
+  container.addService<StockService, StockService>(
     lifetime: lifetime,
     factory: (request) => StockService(request(BookRepository)),
   );
-  container.registerService<BookStore, BookStore>(
+  container.addService<BookStore, BookStore>(
     lifetime: lifetime,
     factory: (request) =>
         BookStore(request(BookRepository), request(StockService)),
@@ -53,11 +53,11 @@ void main() {
   test("should throw ServiceNotFoundError", () {
     var container = ServiceContainer();
 
-    container.registerService<BookRepository, BookRepository>(
+    container.addService<BookRepository, BookRepository>(
       lifetime: ServiceLifetime.transient,
       factory: (request) => BookRepository(),
     );
-    container.registerService<BookStore, BookStore>(
+    container.addService<BookStore, BookStore>(
       lifetime: ServiceLifetime.transient,
       factory: (request) =>
           BookStore(request(BookRepository), request(StockService)),

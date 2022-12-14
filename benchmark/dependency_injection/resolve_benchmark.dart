@@ -28,7 +28,7 @@ class ResolveOneHasNoDependencies extends BenchmarkBase {
   void setup() {
     container = ServiceContainer();
 
-    container.registerService<Foo, Foo>(
+    container.addService<Foo, Foo>(
       lifetime: ServiceLifetime.transient,
       factory: (_) => Foo(),
     );
@@ -53,11 +53,11 @@ class ResolveOneHasOneDependencies extends BenchmarkBase {
   void setup() {
     container = ServiceContainer();
 
-    container.registerService<Foo, Foo>(
+    container.addService<Foo, Foo>(
       lifetime: ServiceLifetime.transient,
       factory: (_) => Foo(),
     );
-    container.registerService<Bar, Bar>(
+    container.addService<Bar, Bar>(
       lifetime: ServiceLifetime.transient,
       factory: (request) => Bar(request(Foo)),
     );
@@ -83,19 +83,19 @@ class ResolveOneHasThreeDependencies extends BenchmarkBase {
   void setup() {
     container = ServiceContainer();
 
-    container.registerService<Foo, Foo>(
+    container.addService<Foo, Foo>(
       lifetime: ServiceLifetime.transient,
       factory: (_) => Foo(),
     );
-    container.registerService<Bar, Bar>(
+    container.addService<Bar, Bar>(
       lifetime: ServiceLifetime.transient,
       factory: (request) => Bar(request(Foo)),
     );
-    container.registerService<Baz, Baz>(
+    container.addService<Baz, Baz>(
       lifetime: ServiceLifetime.transient,
       factory: (_) => Baz(),
     );
-    container.registerService<Qux, Qux>(
+    container.addService<Qux, Qux>(
       lifetime: ServiceLifetime.transient,
       factory: (request) => Qux(request(Foo), request(Bar), request(Baz)),
     );

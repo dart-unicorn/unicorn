@@ -7,12 +7,12 @@ typedef ServiceResolver = AnyService Function(Type target);
 typedef ServiceFactory<T> = T Function(ServiceResolver resolve);
 
 abstract class IServiceContainer {
-  void registerService<TServiceIdentifier, TServiceTarget>({
+  void addService<TServiceType, TServiceImplementation>({
     required ServiceLifetime lifetime,
-    required ServiceFactory<TServiceIdentifier> factory,
+    required ServiceFactory<TServiceType> factory,
   });
 
-  TServiceIdentifier resolve<TServiceIdentifier>();
+  TServiceType resolve<TServiceType>();
 }
 
 enum ServiceLifetime {
@@ -33,27 +33,27 @@ class ServiceContainer implements IServiceContainer {
       ServiceInstanceCollection();
 
   @override
-  void registerService<TServiceIdentifier, TServiceTarget>({
+  void addService<TServiceType, TServiceImplementation>({
     required ServiceLifetime lifetime,
-    required ServiceFactory<TServiceIdentifier> factory,
+    required ServiceFactory<TServiceType> factory,
   }) {
     _descriptors.add(
-      identifier: TServiceIdentifier,
-      target: TServiceTarget,
+      serviceType: TServiceType,
+      serviceImplmenetationType: TServiceImplementation,
       lifetime: lifetime,
       factory: factory,
     );
   }
 
   @override
-  TServiceIdentifier resolve<TServiceIdentifier>() {
+  TServiceType resolve<TServiceType>() {
     var servicesInRequestScope = ServiceInstanceCollection();
 
     return _resolveInternal(
-      TServiceIdentifier,
+      TServiceType,
       _servicesInSingletonScope,
       servicesInRequestScope,
-    ) as TServiceIdentifier;
+    ) as TServiceType;
   }
 
   dynamic _resolveInternal(
@@ -127,12 +127,17 @@ class ServiceDescriptorCollection extends IterableBase<ServiceDescriptor> {
   Iterator<ServiceDescriptor> get iterator => _descriptors.iterator;
 
   void add({
-    required Type identifier,
-    required Type target,
+    required Type serviceType,
+    required Type serviceImplmenetationType,
     required ServiceLifetime lifetime,
     required ServiceFactory<dynamic> factory,
   }) {
-    _descriptors.add(ServiceDescriptor(identifier, target, lifetime, factory));
+    _descriptors.add(ServiceDescriptor(
+      serviceType,
+      serviceImplmenetationType,
+      lifetime,
+      factory,
+    ));
   }
 
   void remove(ServiceDescriptor descriptor) {
@@ -142,7 +147,7 @@ class ServiceDescriptorCollection extends IterableBase<ServiceDescriptor> {
   ServiceDescriptor? getByIdentifier(Type identifier) {
     try {
       return _descriptors
-          .firstWhere((descriptor) => descriptor.identifier == identifier);
+          .firstWhere((descriptor) => descriptor.serviceType == identifier);
     } on StateError {
       return null;
     }
@@ -151,15 +156,15 @@ class ServiceDescriptorCollection extends IterableBase<ServiceDescriptor> {
 
 class ServiceDescriptor {
   const ServiceDescriptor(
-    this.identifier,
-    this.target,
+    this.serviceType,
+    this.serviceImplementationType,
     this.lifetime,
     this.factory,
   );
 
-  final Type identifier;
+  final Type serviceType;
 
-  final Type target;
+  final Type serviceImplementationType;
 
   final ServiceLifetime lifetime;
 
@@ -221,7 +226,7 @@ class ServiceInstance {
     ServiceDescriptor descriptor,
     ServiceDescriptor other,
   ) =>
-      (descriptor.identifier == other.identifier &&
+      (descriptor.serviceType == other.serviceType &&
           descriptor.lifetime == descriptor.lifetime);
 
   bool hasSameDescriptor(ServiceDescriptor descriptor) =>
