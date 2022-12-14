@@ -26,7 +26,7 @@ enum ServiceLifetime {
 class ServiceContainer implements IServiceContainer {
   ServiceContainer();
 
-  final ServiceDescriptorCollection _serviceDescriptors =
+  final ServiceDescriptorCollection _descriptors =
       ServiceDescriptorCollection();
 
   final ServiceInstanceCollection _servicesInSingletonScope =
@@ -37,7 +37,7 @@ class ServiceContainer implements IServiceContainer {
     required ServiceLifetime lifetime,
     required ServiceFactory<TServiceIdentifier> factory,
   }) {
-    _serviceDescriptors.add(
+    _descriptors.add(
       identifier: TServiceIdentifier,
       target: TServiceTarget,
       lifetime: lifetime,
@@ -96,7 +96,7 @@ class ServiceContainer implements IServiceContainer {
   }
 
   ServiceDescriptor _requireServiceDescriptorByIdentifier(Type identifier) {
-    var descriptor = _serviceDescriptors.getByIdentifier(identifier);
+    var descriptor = _descriptors.getByIdentifier(identifier);
     if (descriptor == null) {
       throw ServiceNotFoundError.fromServiceIdentifier(identifier);
     }
