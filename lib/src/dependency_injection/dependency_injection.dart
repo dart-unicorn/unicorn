@@ -8,14 +8,14 @@ typedef ServiceFactory<T> = T Function(ServiceResolver resolve);
 
 abstract class IServiceContainer {
   void registerService<TServiceIdentifier, TServiceTarget>({
-    required Scope scope,
+    required ServiceLifetime lifetime,
     required ServiceFactory<TServiceIdentifier> factory,
   });
 
   TServiceIdentifier resolve<TServiceIdentifier>();
 }
 
-enum Scope {
+enum ServiceLifetime {
   singleton,
 
   transient,
@@ -34,13 +34,13 @@ class ServiceContainer implements IServiceContainer {
 
   @override
   void registerService<TServiceIdentifier, TServiceTarget>({
-    required Scope scope,
+    required ServiceLifetime lifetime,
     required ServiceFactory<TServiceIdentifier> factory,
   }) {
     _serviceDescriptors.add(
       identifier: TServiceIdentifier,
       target: TServiceTarget,
-      scope: scope,
+      lifetime: lifetime,
       factory: factory,
     );
   }
@@ -129,10 +129,10 @@ class ServiceDescriptorCollection extends IterableBase<ServiceDescriptor> {
   void add({
     required Type identifier,
     required Type target,
-    required Scope scope,
+    required ServiceLifetime lifetime,
     required ServiceFactory<dynamic> factory,
   }) {
-    _descriptors.add(ServiceDescriptor(identifier, target, scope, factory));
+    _descriptors.add(ServiceDescriptor(identifier, target, lifetime, factory));
   }
 
   void remove(ServiceDescriptor descriptor) {
@@ -153,7 +153,7 @@ class ServiceDescriptor {
   const ServiceDescriptor(
     this.identifier,
     this.target,
-    this.scope,
+    this.lifetime,
     this.factory,
   );
 
@@ -161,17 +161,17 @@ class ServiceDescriptor {
 
   final Type target;
 
-  final Scope scope;
+  final ServiceLifetime lifetime;
 
   final ServiceFactory<dynamic> factory;
 
-  bool isInScope(Scope scope) => this.scope == scope;
+  bool isInScope(ServiceLifetime lifetime) => this.lifetime == lifetime;
 
-  bool isInSingletonScope() => isInScope(Scope.singleton);
+  bool isInSingletonScope() => isInScope(ServiceLifetime.singleton);
 
-  bool isInTransientScope() => isInScope(Scope.transient);
+  bool isInTransientScope() => isInScope(ServiceLifetime.transient);
 
-  bool isInRequestScope() => isInScope(Scope.request);
+  bool isInRequestScope() => isInScope(ServiceLifetime.request);
 
   ServiceInstance createServiceInstance(ServiceResolver resolver) {
     var object = factory(resolver);
@@ -222,7 +222,7 @@ class ServiceInstance {
     ServiceDescriptor other,
   ) =>
       (descriptor.identifier == other.identifier &&
-          descriptor.scope == descriptor.scope);
+          descriptor.lifetime == descriptor.lifetime);
 
   bool hasSameDescriptor(ServiceDescriptor descriptor) =>
       _hasSameDescriptor(this.descriptor, descriptor);

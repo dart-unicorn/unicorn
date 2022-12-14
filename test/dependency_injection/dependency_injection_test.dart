@@ -23,18 +23,18 @@ class BookRepository {}
 
 void addDependencies(
   ServiceContainer container, {
-  Scope scope = Scope.transient,
+  ServiceLifetime lifetime = ServiceLifetime.transient,
 }) {
   container.registerService<BookRepository, BookRepository>(
-    scope: scope,
+    lifetime: lifetime,
     factory: (request) => BookRepository(),
   );
   container.registerService<StockService, StockService>(
-    scope: scope,
+    lifetime: lifetime,
     factory: (request) => StockService(request(BookRepository)),
   );
   container.registerService<BookStore, BookStore>(
-    scope: scope,
+    lifetime: lifetime,
     factory: (request) =>
         BookStore(request(BookRepository), request(StockService)),
   );
@@ -54,11 +54,11 @@ void main() {
     var container = ServiceContainer();
 
     container.registerService<BookRepository, BookRepository>(
-      scope: Scope.transient,
+      lifetime: ServiceLifetime.transient,
       factory: (request) => BookRepository(),
     );
     container.registerService<BookStore, BookStore>(
-      scope: Scope.transient,
+      lifetime: ServiceLifetime.transient,
       factory: (request) =>
           BookStore(request(BookRepository), request(StockService)),
     );
@@ -69,7 +69,7 @@ void main() {
     );
   });
 
-  test("should resolve in transient scope", () {
+  test("should resolve in transient lifetime", () {
     var container = ServiceContainer();
     addDependencies(container);
 
@@ -82,9 +82,9 @@ void main() {
     );
   });
 
-  test("should resolve in singleton scope", () {
+  test("should resolve in singleton lifetime", () {
     var container = ServiceContainer();
-    addDependencies(container, scope: Scope.singleton);
+    addDependencies(container, lifetime: ServiceLifetime.singleton);
 
     var firstResolved = container.resolve<BookStore>();
     var secondResolved = container.resolve<BookStore>();
@@ -95,9 +95,9 @@ void main() {
     );
   });
 
-  test("should resolve in request scope", () {
+  test("should resolve in request lifetime", () {
     var container = ServiceContainer();
-    addDependencies(container, scope: Scope.request);
+    addDependencies(container, lifetime: ServiceLifetime.request);
 
     var firstResolved = container.resolve<BookStore>();
     var secondResolved = container.resolve<BookStore>();
