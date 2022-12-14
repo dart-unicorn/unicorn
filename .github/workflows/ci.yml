@@ -26,6 +26,10 @@ jobs:
       - uses: dart-lang/setup-dart@v1.3
         with:
           sdk: ${{matrix.sdk}}
+      - uses: stelynx/dart-full-coverage@v1.1.1
+        with:
+          package: unicorn
+          path: lib/src
       - run: dart pub get
       - run: dart test --coverage .
       - run: dart pub run coverage:format_coverage -i . -l > coverage.lcov
