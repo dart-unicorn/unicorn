@@ -1,0 +1,33 @@
+name: Publish
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package:
+          - unicorn
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Publish to pub.dev
+        id: publish
+        uses: k-paxian/dart-package-publisher@master
+        with:
+          relativePath: ./packages/${{ matrix.package }}
+          credentialJson: ${{ secrets.PUB_CREDENTIAL_JSON }}
+          suppressBuildRunner: true
+          skipTests: false
+
+      - name: Tag commit
+        if: steps.publish.outputs.success
+        uses: hole19/git-tag-action@master
+        env:
+          TAG: ${{steps.publish.outputs.package}}-${{steps.publish.outputs.localVersion}}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

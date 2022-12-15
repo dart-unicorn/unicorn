@@ -1,0 +1,17 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 15%
+        paths:
+          - "lib/src"
+    patch:
+      default:
+        target: auto
+        threshold: 15%
+        paths:
+          - "lib/src"
+comment:
+  layout: "reach, diff"
+  behavior: default
