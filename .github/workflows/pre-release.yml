@@ -1,0 +1,37 @@
+name: Pre-Release
+on:
+  push:
+    branches:
+      - pre-release/*/*
+jobs:
+  pre-release:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package:
+          - unicorn
+          - unicorn_codegen
+          - unicorn_shelf
+    steps:
+      - name: Check
+        id: check
+        run: |
+          echo "is_satisfied=${{startsWith(github.ref_name, format('refs/heads/pre-release/{0}', ${{ matrix.package }}))}}" >> $GITHUB_OUTPUT
+
+      - if: steps.check.outputs.is_satisfied
+        uses: actions/checkout@v3
+
+      - if: steps.check.outpus.is_satisfied
+        uses: dart-lang/setup-dart@v1.3
+        with:
+          sdk: ${{ matrix.sdk }}
+
+      - if: steps.check.outpus.is_satisfied
+        name: Dry-run publish
+        uses: k-paxian/dart-package-publisher@master
+        with:
+          dryRunOnly: true
+          relativePath: ./packages/${{ matrix.package }}
+          credentialJson: ${{ secrets.PUB_CREDENTIAL_JSON }}
+          suppressBuildRunner: true
+          skipTests: true

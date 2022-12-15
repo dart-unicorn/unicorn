@@ -1,21 +1,29 @@
-name: Publish
+name: Release
 on:
   push:
     branches:
-      - main
+      - release/*/*
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         package:
           - unicorn
+          - unicorn_codegen
           - unicorn_shelf
     steps:
-      - uses: actions/checkout@v3
+      - name: Check
+        id: check
+        run: |
+          echo "is_satisfied=${{startsWith(github.ref_name, format('refs/heads/pre-release/{0}', ${{ matrix.package }}))}}" >> $GITHUB_OUTPUT
 
-      - name: Publish to pub.dev
+      - if: steps.check.outputs.is_satisfied
+        uses: actions/checkout@v3
+
+      - if: steps.check.outputs.is_satisfied
         id: publish
+        name: Publish to pub.dev
         uses: k-paxian/dart-package-publisher@master
         with:
           relativePath: ./packages/${{ matrix.package }}
@@ -23,8 +31,8 @@ jobs:
           suppressBuildRunner: true
           skipTests: false
 
-      - name: Tag commit
-        if: steps.publish.outputs.success
+      - if: steps.check.outputs.is_satisfied && steps.publish.outputs.success
+        name: Tag commit
         uses: hole19/git-tag-action@master
         env:
           TAG: ${{steps.publish.outputs.package}}-${{steps.publish.outputs.localVersion}}
