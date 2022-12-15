@@ -20,7 +20,7 @@ jobs:
         id: publish
         uses: k-paxian/dart-package-publisher@master
         with:
-          relativePath: ${{ matrix.package }}
+          relativePath: ./packages/${{ matrix.package }}
           credentialJson: ${{ secrets.PUB_CREDENTIAL_JSON }}
           suppressBuildRunner: true
           skipTests: false
