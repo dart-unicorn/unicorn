@@ -1,0 +1,56 @@
+name: Build
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - "feat/**"
+      - "fix/**"
+  pull_request:
+    branches:
+      - main
+      - dev
+jobs:
+  build:
+    strategy:
+      matrix:
+        sdk:
+          - stable
+        package:
+          - unicorn
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: dart-lang/setup-dart@v1.3
+        with:
+          sdk: ${{ matrix.sdk }}
+
+      - uses: stelynx/dart-full-coverage@v1.1.1
+        with:
+          package: ${{ matrix.sdk }}
+          main_dir: ./packages/${{ matrix.sdk }}
+
+      - name: Install dependencies
+        working-directory: ./packages/${{ matrix.package }}
+        run: dart pub get
+
+      - name: Analyze
+        working-directory: ./packages/${{ matrix.package }}
+        run: dart analyze
+
+      - name: Run tests
+        working-directory: ./packages/${{ matrix.package }}
+        run: dart test --coverage .
+
+      - name: Collect coverage
+        working-directory: ./packages/${{ matrix.package }}
+        run: dart pub run coverage:format_coverage -i . -l > coverage.lcov
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: ${{ matrix.package }}
+          files: ./packages/${{ matrix.package }}/coverage.lcov
+          fail_ci_if_error: true
