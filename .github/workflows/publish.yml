@@ -10,6 +10,7 @@ jobs:
       matrix:
         package:
           - unicorn
+          - unicorn_shelf
     steps:
       - uses: actions/checkout@v3
 
