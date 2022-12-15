@@ -33,10 +33,6 @@ jobs:
           dart pub global activate coverage 
           dart pub get
 
-      - name: Install dependencies
-        working-directory: ./packages/${{ matrix.package }}
-        run: dart pub get
-
       - name: Analyze
         working-directory: ./packages/${{ matrix.package }}
         run: dart analyze
