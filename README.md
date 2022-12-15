@@ -1,5 +1,13 @@
 # Unicorn
 
+An universe development framework for Dart.
+
+![GitHub License](https://img.shields.io/github/license/dart-unicorn/unicorn?style=flat-square)
+![Pub Version](https://img.shields.io/pub/v/unicorn?style=flat-square)
+![Pub Likes](https://img.shields.io/pub/likes/unicorn?style=flat-square)
+![Pub Points](https://img.shields.io/pub/points/unicorn?style=flat-square)
+![Pub Popularity](https://img.shields.io/pub/popularity/unicorn?style=flat-square)
+
 ## Status
 
 | Name | Badge | Remarks |
