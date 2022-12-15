@@ -6,12 +6,14 @@ on:
       - dev
       - "feat/**"
     paths:
+      - ".github/workflows"
       - "lib/**"
   pull_request:
     branches:
       - main
       - dev
     paths:
+      - ".github/workflows"
       - "lib/**"
 jobs:
   test:
