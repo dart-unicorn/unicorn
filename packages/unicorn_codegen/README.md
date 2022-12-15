@@ -1,5 +1,7 @@
 # Unicorn Code Generator
 
+Code generation support for Unicorn.
+
 ![GitHub License](https://img.shields.io/github/license/dart-unicorn/unicorn?style=flat-square)
 ![Pub Version](https://img.shields.io/pub/v/unicorn_codegen?style=flat-square)
 ![Pub Likes](https://img.shields.io/pub/likes/unicorn_codegen?style=flat-square)

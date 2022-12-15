@@ -1,5 +1,5 @@
 name: unicorn_codegen
-description: A starting point for Dart libraries or applications.
+description: Code generation support for Unicorn.
 version: 0.0.1
 repository: https://github.com/dart-unicorn/unicorn
 
