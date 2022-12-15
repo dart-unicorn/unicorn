@@ -30,7 +30,7 @@ jobs:
         with:
           package: ${{ matrix.sdk }}
           use_git_root: false
-          main_dir: ./packages/${{ matrix.sdk }}
+          main_dir: ./packages/${{ matrix.package }}
 
       - name: Install dependencies
         working-directory: ./packages/${{ matrix.package }}
