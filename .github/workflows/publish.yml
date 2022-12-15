@@ -12,7 +12,6 @@ jobs:
         id: publish
         uses: k-paxian/dart-package-publisher@master
         with:
-          accessToken: ${{ secrets.PUB_ACCESS_TOKEN }}
-          refreshToken: ${{ secrets.PUB_REFRESH_TOKEN }}
+          credentialJson: ${{ secrets.PUB_CREDENTIAL_JSON }}
           suppressBuildRunner: true
           skipTests: false
