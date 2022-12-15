@@ -29,7 +29,8 @@ jobs:
       - uses: stelynx/dart-full-coverage@v1.1.1
         with:
           package: ${{ matrix.sdk }}
-          path: ./packages/${{ matrix.sdk }}
+          use_git_root: false
+          main_dir: ./packages/${{ matrix.sdk }}
 
       - name: Install dependencies
         working-directory: ./packages/${{ matrix.package }}
