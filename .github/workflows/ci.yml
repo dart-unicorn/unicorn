@@ -1,7 +1,20 @@
-name: dart_test
-on: [push, pull_request]
+name: ci
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - "feat/**"
+    paths:
+      - "lib/**"
+  pull_request:
+    branches:
+      - main
+      - dev
+    paths:
+      - "lib/**"
 jobs:
-  dart_test:
+  test:
     strategy:
       matrix:
         sdk: [stable]
